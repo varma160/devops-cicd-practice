@@ -1,42 +1,60 @@
 trigger:
 - main
 
-pool:
-  vmImage: ubuntu-latest
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: self
 
-steps:
-- checkout: self
+    - script: |
+        mkdir build
+        cp index.html build/index.html
+      displayName: 'Build HTML application'
 
-- script: |
-    echo "Build started"
-    mkdir build
-    cp index.html build/index.html
-    echo "Build completed"
-  displayName: 'Build HTML application'
+    - script: |
+        test -f build/index.html
+      displayName: 'Test build files'
 
-- script: |
-    test -f build/index.html
-    echo "Test passed"
-  displayName: 'Test build files'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'build'
+        artifact: 'drop'
+      displayName: 'Publish build artifact'
 
-- task: PublishPipelineArtifact@1
-  inputs:
-    targetPath: 'build'
-    artifact: 'drop'
-  displayName: 'Publish build artifact'
-- download: current
-  artifact: drop
-  displayName: 'Download build artifact'
+- stage: Test
+  dependsOn: Build
+  jobs:
+  - deployment: TestDeployment
+    environment: 'test-environment'
+    pool:
+      vmImage: ubuntu-latest
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+          - script: |
+              echo "Deployed to Test Environment"
+              ls -la $(Pipeline.Workspace)/drop
 
-- script: |
-    echo "Deploying to Test Environment"
-    ls -la $(Pipeline.Workspace)/drop
-  displayName: 'Deploy to Test Environment'
-- download: current
-  artifact: drop
-  displayName: 'Download artifact for Production'
-
-- script: |
-    echo "Deploying to Production Environment"
-    ls -la $(Pipeline.Workspace)/drop
-  displayName: 'Deploy to Production'
+- stage: Production
+  dependsOn: Test
+  jobs:
+  - deployment: ProductionDeployment
+    environment: 'production-environment'
+    pool:
+      vmImage: ubuntu-latest
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+          - script: |
+              echo "Deployed to Production Environment"
+              ls -la $(Pipeline.Workspace)/drop
