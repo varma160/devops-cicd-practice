@@ -1,0 +1,26 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- checkout: self
+
+- script: |
+    echo "Build started"
+    mkdir build
+    cp index.html build/index.html
+    echo "Build completed"
+  displayName: 'Build HTML application'
+
+- script: |
+    test -f build/index.html
+    echo "Test passed"
+  displayName: 'Test build files'
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: 'build'
+    artifact: 'drop'
+  displayName: 'Publish build artifact'
