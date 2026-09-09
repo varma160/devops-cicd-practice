@@ -32,3 +32,11 @@ steps:
     echo "Deploying to Test Environment"
     ls -la $(Pipeline.Workspace)/drop
   displayName: 'Deploy to Test Environment'
+- download: current
+  artifact: drop
+  displayName: 'Download artifact for Production'
+
+- script: |
+    echo "Deploying to Production Environment"
+    ls -la $(Pipeline.Workspace)/drop
+  displayName: 'Deploy to Production'
