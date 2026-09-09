@@ -24,3 +24,11 @@ steps:
     targetPath: 'build'
     artifact: 'drop'
   displayName: 'Publish build artifact'
+- download: current
+  artifact: drop
+  displayName: 'Download build artifact'
+
+- script: |
+    echo "Deploying to Test Environment"
+    ls -la $(Pipeline.Workspace)/drop
+  displayName: 'Deploy to Test Environment'
